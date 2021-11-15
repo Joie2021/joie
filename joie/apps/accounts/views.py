@@ -119,7 +119,7 @@ def error_page(request):
 
 def send_mail_after_registration(email , token):
     subject = 'Your accounts need to be verified'
-    message = f'Hi paste the link to verify your account https://github.com/joie2021/joie.git/accounts/verify/{token}'
+    message = f'Hi paste the link to verify your account https://github.com/Joie2021/joie.git/accounts/verify/{token}'
     email_from = settings.EMAIL_HOST_USER
     recipient_list = [email]
     send_mail(subject, message , email_from ,recipient_list )
@@ -137,7 +137,7 @@ def password_reset_request(request):
                     email_template_name = "accounts/password_reset_email.txt"
                     c = {
                         "email":user.email,
-                        'domain':'github.com/joie2021/joie.git',
+                        'domain':'github.com/Joie2021/joie.git',
                         'site_name': 'Website',
                         "uid": urlsafe_base64_encode(force_bytes(user.pk)),
                         "user": user,
