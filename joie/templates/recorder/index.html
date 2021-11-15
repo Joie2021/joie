@@ -1,0 +1,517 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Joie</title>
+        <link rel="canonical" href="https://markjivko.com/tutorials/B3wWIsNHPk4/">
+        <meta charset="UTF-8">
+        <meta name="Author" content="Mark Jivko">
+        <meta name="Keywords" content="js,audio recorder">
+        <meta name="Description" content="Recording audio with HTML 5 and JavaScript">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="viewport" content="initial-scale=1.0, width=device-width">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <title>Joie</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'musicplayer/vendor/bootstrap/css/bootstrap.min.css'%}" rel="stylesheet">
+
+
+    <!-- Additional CSS Files -->
+    <link rel="stylesheet" href="{% static 'musicplayer/assets/css/fontawesome.css'%}">
+    <link rel="stylesheet" href="{% static 'musicplayer/assets/css/templatemo-digimedia-v1.css'%}">
+    <link rel="stylesheet" href="{% static 'musicplayer/assets/css/animated.css'%}">
+    <link rel="stylesheet" href="{% static 'musicplayer/assets/css/owl.css'%}">
+       
+        <style type="text/css">
+            
+            .holder {
+                background-color: #4c474c;
+                background-image: -webkit-gradient(linear, left bottom, left top, from(#4c474c), to(#141414));
+                background-image: -o-linear-gradient(bottom, #4c474c 0%, #141414 100%);
+                background-image: linear-gradient(0deg, #4c474c 0%, #141414 100%);
+                border-radius: 50px;
+            }
+            [data-role="controls"] > button {
+                margin: 50px auto;
+                outline: none;
+                display: block;
+                border: none;
+                background-color: #D9AFD9;
+                background-image: -webkit-gradient(linear, left bottom, left top, from(#D9AFD9), to(#97D9E1));
+                background-image: -o-linear-gradient(bottom, #D9AFD9 0%, #97D9E1 100%);
+                background-image: linear-gradient(0deg, #D9AFD9 0%, #97D9E1 100%);
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                text-indent: -1000em;
+                cursor: pointer;
+                -webkit-box-shadow: 0px 5px 5px 2px rgba(0,0,0,0.3) inset, 
+                    0px 0px 0px 30px #fff, 0px 0px 0px 35px #333;
+                        box-shadow: 0px 5px 5px 2px rgba(0,0,0,0.3) inset, 
+                    0px 0px 0px 30px #fff, 0px 0px 0px 35px #333;
+            }
+            [data-role="controls"] > button:hover {
+                background-color: #ee7bee;
+                background-image: -webkit-gradient(linear, left bottom, left top, from(#ee7bee), to(#6fe1f5));
+                background-image: -o-linear-gradient(bottom, #ee7bee 0%, #6fe1f5 100%);
+                background-image: linear-gradient(0deg, #ee7bee 0%, #6fe1f5 100%);
+            }
+            [data-role="controls"] > button[data-recording="true"] {
+                background-color: #ff2038;
+                background-image: -webkit-gradient(linear, left bottom, left top, from(#ff2038), to(#b30003));
+                background-image: -o-linear-gradient(bottom, #ff2038 0%, #b30003 100%);
+                background-image: linear-gradient(0deg, #ff2038 0%, #b30003 100%);
+            }
+            [data-role="recordings"] > .row {
+                width: auto;
+                height: auto;
+                padding: 20px;
+            }
+            [data-role="recordings"] > .row > audio {
+                outline: none;
+            }
+            [data-role="recordings"] > .row > a {
+                display: inline-block;
+                text-align: center;
+                font-size: 20px;
+                line-height: 50px;
+                vertical-align: middle;
+                width: 50px;
+                height: 50px;
+                border-radius: 20px;
+                color: #fff;
+                font-weight: bold;
+                text-decoration: underline;
+                background-color: #0093E9;
+                background-image: -webkit-gradient(linear, left bottom, left top, from(#0093E9), to(#80D0C7));
+                background-image: -o-linear-gradient(bottom, #0093E9 0%, #80D0C7 100%);
+                background-image: linear-gradient(0deg, #0093E9 0%, #80D0C7 100%);
+                float: right;
+                margin-left: 20px;
+                cursor: pointer;
+            }
+            [data-role="recordings"] > .row > a:hover {
+                text-decoration: none;
+            }
+            [data-role="recordings"] > .row > a:active {
+                background-image: -webkit-gradient(linear, left top, left bottom, from(#0093E9), to(#80D0C7));
+                background-image: -o-linear-gradient(top, #0093E9 0%, #80D0C7 100%);
+                background-image: linear-gradient(180deg, #0093E9 0%, #80D0C7 100%);
+            }
+        </style>
+        <script type="text/javascript" src="https://code.jquery.com/jquery.min.js"></script>
+        <script src="https://markjivko.com/dist/recorder.js"></script>
+        <script>
+            jQuery(document).ready(function () {
+                var $ = jQuery;
+                var myRecorder = {
+                    objects: {
+                        context: null,
+                        stream: null,
+                        recorder: null
+                    },
+                    init: function () {
+                        if (null === myRecorder.objects.context) {
+                            myRecorder.objects.context = new (
+                                    window.AudioContext || window.webkitAudioContext
+                                    );
+                        }
+                    },
+                    start: function () {
+                        var options = {audio: true, video: false};
+                        navigator.mediaDevices.getUserMedia(options).then(function (stream) {
+                            myRecorder.objects.stream = stream;
+                            myRecorder.objects.recorder = new Recorder(
+                                    myRecorder.objects.context.createMediaStreamSource(stream),
+                                    {numChannels: 1}
+                            );
+                            myRecorder.objects.recorder.record();
+                        }).catch(function (err) {});
+                    },
+                    stop: function (listObject) {
+                        if (null !== myRecorder.objects.stream) {
+                            myRecorder.objects.stream.getAudioTracks()[0].stop();
+                        }
+                        if (null !== myRecorder.objects.recorder) {
+                            myRecorder.objects.recorder.stop();
+
+                            // Validate object
+                            if (null !== listObject
+                                    && 'object' === typeof listObject
+                                    && listObject.length > 0) {
+                                // Export the WAV file
+                                myRecorder.objects.recorder.exportWAV(function (blob) {
+                                    var url = (window.URL || window.webkitURL)
+                                            .createObjectURL(blob);
+
+                                    // Prepare the playback
+                                    var audioObject = $('<audio controls></audio>')
+                                            .attr('src', url);
+
+                                    // Prepare the download link
+                                    var downloadObject = $('<a>&#9660;</a>')
+                                            .attr('href', url)
+                                            .attr('download', new Date().toUTCString() + '.wav');
+
+                                    // Wrap everything in a row
+                                    var holderObject = $('<div class="row"></div>')
+                                            .append(audioObject)
+                                            .append(downloadObject);
+
+                                    // Append to the list
+                                    listObject.append(holderObject);
+                                });
+                            }
+                        }
+                    }
+                };
+
+                // Prepare the recordings list
+                var listObject = $('[data-role="recordings"]');
+                
+                // Prepare the record button
+                $('[data-role="controls"] > button').click(function () {
+                    // Initialize the recorder
+                    myRecorder.init();
+
+                    // Get the button state 
+                    var buttonState = !!$(this).attr('data-recording');
+
+                    // Toggle
+                    if (!buttonState) {
+                        $(this).attr('data-recording', 'true');
+                        myRecorder.start();
+                    } else {
+                        $(this).attr('data-recording', '');
+                        myRecorder.stop(listObject);
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+    <!-- ***** Preloader Start ***** -->
+  <div id="js-preloader" class="js-preloader">
+    <div class="preloader-inner">
+      <span class="dot"></span>
+      <div class="dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+  <!-- ***** Preloader End ***** -->
+
+  
+
+  
+
+  <div class="main-banner wow fadeIn" id="top" data-wow-duration="1s" data-wow-delay="0.5s">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="row">
+            <div class="col-lg-6 align-self-center">
+              <div class="left-content show-up header-text wow fadeInLeft" data-wow-duration="1s" data-wow-delay="1s">
+                <div class="row">
+                  <div class="col-lg-12">
+                    <h6>To Declutter Your Mind</h6>
+                    <h2>Audio Journal</h2>
+                    <p>Journaling has been linked to several mental health benefits similar to those you can get from meditation and it also helps you gain more self-awareness. Audio journaling is just an easier way to do it for many of us. Give it a try...</p>
+                  </div>
+                  <div class="col-lg-12">
+                    <div class="border-first-button scroll-to-section">
+                      <a href="#contact">Get Started</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="right-image wow fadeInRight" data-wow-duration="1s" data-wow-delay="0.5s">
+                <img src="{% static 'musicplayer/assets/images/slider-dec.jpg'%}" alt="">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="about" class="about section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="about-left-image  wow fadeInLeft" data-wow-duration="1s" data-wow-delay="0.5s">
+                <img src="{% static 'musicplayer/assets/images/about-dec.jpg'%}" alt="">
+              </div>
+            </div>
+            <div class="col-lg-6 align-self-center  wow fadeInRight" data-wow-duration="1s" data-wow-delay="0.5s">
+              <div class="about-right-content">
+                <div class="section-heading">
+                  <h6>For Those Who Couldn’t Stick To Meditation 😉</h6>
+                  <h4>Benefits of <em>Audio Journaling</em></h4>
+                  <div class="line-dec"></div>
+                </div>
+                <p>Audio journaling can increase your chances of protecting your brain's health while boosting your productivity. Speaking your mind counteracts the tension you accumulate in your body, improves immune function, boosts your mood, and strengthens your emotional functions.</p>
+                <div class="row">
+                  <div class="col-lg-4 col-sm-4">
+                    <div class="skill-item first-skill-item wow fadeIn" data-wow-duration="1s" data-wow-delay="0s">
+                      <div class="progress" data-percentage="100">
+                        <span class="progress-left">
+                          <span class="progress-bar"></span>
+                        </span>
+                        <span class="progress-right">
+                          <span class="progress-bar"></span>
+                        </span>
+                        <div class="progress-value">
+                          <div>
+                            
+                            <span>Productivity</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-sm-4">
+                    <div class="skill-item second-skill-item wow fadeIn" data-wow-duration="1s" data-wow-delay="0s">
+                      <div class="progress" data-percentage="100">
+                        <span class="progress-left">
+                          <span class="progress-bar"></span>
+                        </span>
+                        <span class="progress-right">
+                          <span class="progress-bar"></span>
+                        </span>
+                        <div class="progress-value">
+                          <div>
+                            
+                            <span>Headspace</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-sm-4">
+                    <div class="skill-item third-skill-item wow fadeIn" data-wow-duration="1s" data-wow-delay="0s">
+                      <div class="progress" data-percentage="100">
+                        <span class="progress-left">
+                          <span class="progress-bar"></span>
+                        </span>
+                        <span class="progress-right">
+                          <span class="progress-bar"></span>
+                        </span>
+                        <div class="progress-value">
+                          <div>
+                            
+                            <span>Mindfulness</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                
+                </div> 
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+        <!--recorder-->
+        <div class="holder">
+            <div data-role="controls">
+                <button>Record</button>
+            </div>
+            <div data-role="recordings"></div>
+        </div>
+
+
+        </div>
+        </div>
+        </div>
+
+  <div id="services" class="services section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="section-heading  wow fadeInDown" data-wow-duration="1s" data-wow-delay="0.5s">
+            <h6>Think Out Loud</h6>
+            <h4>Counteract Anxiety or Worry Spirals<em>In The Moment</em></h4>
+            <div class="line-dec"></div>
+          </div>
+        </div>
+        <div class="col-lg-12">
+          <div class="naccs">
+            <div class="grid">
+              <div class="row">
+                <div class="col-lg-12">
+                  <div class="menu">
+                    <div class="first-thumb active">
+                      <div class="thumb">
+                        <span class="icon"><img src="{% static 'musicplayer/assets/images/service-icon-01.jpg'%}" alt=""></span>
+                        Easier
+                      </div>
+                    </div>
+                    <div>
+                      <div class="thumb">                 
+                        <span class="icon"><img src="{% static 'musicplayer/assets/images/service-icon-02.jpg'%}" alt=""></span>
+                        Mood &amp; Emotion
+                      </div>
+                    </div>
+                    <div>
+                      <div class="thumb">                 
+                        <span class="icon"><img src="{% static 'musicplayer/assets/images/service-icon-03.jpg'%}" alt=""></span>
+                        Brainstorm
+                      </div>
+                    </div>
+                    <div>
+                      <div class="thumb">                 
+                        <span class="icon"><img src="{% static 'musicplayer/assets/images/service-icon-04.jpg'%}" alt=""></span>
+                        Good Habit
+                      </div>
+                    </div>
+                    <div class="last-thumb">
+                      <div class="thumb">                 
+                        <span class="icon"><img src="{% static 'musicplayer/assets/images/service-icon-05.jpg'%}" alt=""></span>
+                        Companion
+                      </div>
+                    </div>
+                  </div>
+                </div> 
+                <div class="col-lg-12">
+                  <ul class="nacc">
+                    <li class="active">
+                      <div>
+                        <div class="thumb">
+                          <div class="row">
+                            <div class="col-lg-6 align-self-center">
+                              <div class="left-text">
+                                <h4>Audio journaling can be easier.</h4>
+                                <p>If you struggled to make time to reflect regularly, an audio journal can make it easier for you to simply press record and speak your mind. Unlike a written journal — which has its own benefits — you don’t have to be seated with a pen and a paper. Plus, these days most of us have our phones with us all the time, making it easier for us to use it for audio journaling.</p>
+                                
+                              </div>
+                            </div>
+                            <div class="col-lg-6 align-self-center">
+                              <div class="right-image">
+                                <img src="{% static 'musicplayer/assets/images/service-icon-01.jpg'%}" alt="">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div>
+                        <div class="thumb">
+                          <div class="row">
+                            <div class="col-lg-6 align-self-center">
+                              <div class="left-text">
+                                <h4>Audio journal captures more emotion and mood with voice.</h4>
+                                <p>Audio journaling allows you to record your voice and any background noise — capture a more rich snapshot of your journal entry. When revisiting your audio journals this can be an important data-point for reflection. Did you sound excited? Sick? Happy? What was the background noise if any? If you like to transcribe your audio journals, you still have the original recording for reference.</p>
+                                
+                              </div>
+                            </div>
+                            <div class="col-lg-6 align-self-center">
+                              <div class="right-image">
+                                <img src="{% static 'musicplayer/assets/images/service-icon-02.jpg'%}" alt="">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div>
+                        <div class="thumb">
+                          <div class="row">
+                            <div class="col-lg-6 align-self-center">
+                              <div class="left-text">
+                                <h4>Ability to “think out loud” and brainstorm with an audio journal</h4>
+                                <p>Articulating with an audio journal allows your brain to think more freely and faster — which has benefits for some forms of thinking. For example, if you are practising for a presentation, writing an article, or trying to reflect on a life event — audio journaling might just give you the boost you need to get it out.</p>
+                                
+                              </div>
+                            </div>
+                            <div class="col-lg-6 align-self-center">
+                              <div class="right-image">
+                                <img src="{% static 'musicplayer/assets/images/service-icon-03.jpg'%}" alt="">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div>
+                        <div class="thumb">
+                          <div class="row">
+                            <div class="col-lg-6 align-self-center">
+                              <div class="left-text">
+                                <h4>Audio journal helps develop good habits with your phone or recorder.</h4>
+                                <p>Yes, in today’s times of mindless browsing on digital devices, this is a valuable habit. Using your phone or recorder for audio journaling helps you develop good habits with your digital devices. That is, when feeling down or wanting to articulate, you take the step do something about it.</p>
+                                
+                              </div>
+                            </div>
+                            <div class="col-lg-6 align-self-center">
+                              <div class="right-image">
+                                <img src="{% static 'musicplayer/assets/images/service-icon-04.jpg'%}" alt="">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div>
+                        <div class="thumb">
+                          <div class="row">
+                            <div class="col-lg-6 align-self-center">
+                              <div class="left-text">
+                                <h4>Audio journal is good companion for your written journal.</h4>
+                                <p>Big decisions usually have to be communicated and audio journaling can aid in articulating them better. Especially when we need understanding, empathy or buy-in from others. Avoid overthinking about a topic and then explaining a decision out loud for the first time in front of an audience. Instead, try explaining it out loud to your phone for the first time. You won’t only find better words to express yourself, but you’ll also learn how to control your tone better and inspire more confidence. </p>
+                                
+                              </div>
+                            </div>
+                            <div class="col-lg-6 align-self-center">
+                              <div class="right-image">
+                                <img src="{% static 'musicplayer/assets/images/service-icon-05.jpg'%}" alt="">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>          
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+    
+        <!-- Scripts -->%
+  <script src="{% static 'musicplayer/vendor/jquery/jquery.min.js'%}"></script>
+  <script src="{% static 'musicplayer/vendor/bootstrap/js/bootstrap.bundle.min.js'%}"></script>
+  <script src="{% static 'musicplayer/assets/js/owl-carousel.js'%}"></script>
+  <script src="{% static 'musicplayer/assets/js/animation.js'%}"></script>
+  <script src="{% static 'musicplayer/assets/js/imagesloaded.js'%}"></script>
+  <script src="{% static 'musicplayer/assets/js/custom.js'%}"></script>
+    </body>
+</html>
